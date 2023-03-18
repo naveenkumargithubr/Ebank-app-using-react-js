@@ -1,65 +1,40 @@
 import {Component} from 'react'
 import {Redirect} from 'react-router-dom'
-import Cookies from 'js-cookie'
+import Cookie from 'js-cookie'
 
-import {
-  LoginBgContainer,
-  LoginCardContainer,
-  LoginLogo,
-  LoginFormContainer,
-  LoginBtn,
-  ErrorMsg,
-  InputLabel,
-  InputField,
-  LoginHeading,
-  InputContainer,
-} from './styledComponents'
+import './index.css'
 
 class LoginPage extends Component {
-  state = {
-    userId: '',
-    userPin: '',
-    showSubmitError: false,
-    errorMsg: '',
-  }
-
-  onChangeUserId = event => {
-    this.setState({
-      userId: event.target.value,
-    })
-  }
-
-  onChangeUserPin = event => {
-    this.setState({
-      userPin: event.target.value,
-    })
-  }
+  state = {errorMsg: '', userId: '', userPin: ''}
 
   onSubmitSuccess = jwtToken => {
     const {history} = this.props
-    Cookies.set('jwt_token', jwtToken, {expires: 30})
+    Cookie.set('jwt_token', jwtToken, {expires: 30})
     history.replace('/')
   }
 
   onSubmitFailure = errorMsg => {
-    this.setState({
-      showSubmitError: true,
-      errorMsg,
-    })
+    this.setState({errorMsg, userId: '', userPin: ''})
   }
 
   onSubmitForm = async event => {
     event.preventDefault()
     const {userId, userPin} = this.state
-    const userDetails = {userId, userPin}
-    const loginUrl = 'https://apis.ccbp.in/ebank/login'
+
+    const loginApiUrl = 'https://apis.ccbp.in/ebank/login'
+    const userDetails = {
+      user_id: userId,
+      pin: userPin,
+    }
+    // console.log(userDetails)
     const options = {
-      mode: 'cors',
       method: 'POST',
       body: JSON.stringify(userDetails),
     }
-    const response = await fetch(loginUrl, options)
+
+    const response = await fetch(loginApiUrl, options)
     const data = await response.json()
+
     if (response.ok === true) {
       this.onSubmitSuccess(data.jwt_token)
     } else {
@@ -67,63 +42,65 @@ class LoginPage extends Component {
     }
   }
 
-  renderUserIdField = () => {
-    const {userId} = this.state
-
-    return (
-      <>
-        <InputLabel htmlFor="userId">User ID</InputLabel>
-        <InputField
-          type="text"
-          value={userId}
-          id="userId"
-          placeholder="Enter User ID"
-          onChange={this.onChangeUserId}
-        />
-      </>
-    )
+  onChangeUserPin = event => {
+    this.setState({userPin: event.target.value})
   }
 
-  renderUserPinField = () => {
-    const {userPin} = this.state
-
-    return (
-      <>
-        <InputLabel htmlFor="userPin">PIN</InputLabel>
-        <InputField
-          type="password"
-          value={userPin}
-          id="userPin"
-          placeholder="Enter PIN"
-          onChange={this.onChangeUserPin}
-        />
-      </>
-    )
+  onChangeUserId = event => {
+    this.setState({userId: event.target.value})
   }
 
   render() {
-    const {showSubmitError, errorMsg} = this.state
-    const token = Cookies.get('jwt_token')
+    const {errorMsg, userId, userPin} = this.state
+
+    const token = Cookie.get('jwt_token')
     if (token !== undefined) {
       return <Redirect to="/" />
     }
+
     return (
-      <LoginBgContainer>
-        <LoginCardContainer>
-          <LoginLogo
+      <div className="login-bg-container">
+        <div className="login-card-container">
+          <img
             src="https://assets.ccbp.in/frontend/react-js/ebank-login-img.png"
             alt="website login"
+            className="website-login-img"
           />
-          <LoginFormContainer onSubmit={this.onSubmitForm}>
-            <LoginHeading>Welcome Back!</LoginHeading>
-
-            <InputContainer>{this.renderUserIdField()}</InputContainer>
-            <InputContainer>{this.renderUserPinField()}</InputContainer>
-            <LoginBtn type="submit">Login</LoginBtn>
-            {showSubmitError && <ErrorMsg>{errorMsg}</ErrorMsg>}
-          </LoginFormContainer>
-        </LoginCardContainer>
-      </LoginBgContainer>
+          <form className="login-bg-container" onSubmit={this.onSubmitForm}>
+            <h1 className="welcome-back-heading">Welcome Back!</h1>
+            <div className="input-wrapper">
+              <label htmlFor="userIdInput" className="user-id-label">
+                User ID
+              </label>
+              <input
+                type="text"
+                value={userId}
+                placeholder="Enter User ID"
+                id="userIdInput"
+                className="user-input"
+                onChange={this.onChangeUserId}
+              />
+            </div>
+            <div className="input-wrapper">
+              <label htmlFor="userPinInput" className="user-id-label">
+                PIN
+              </label>
+              <input
+                type="password"
+                value={userPin}
+                placeholder="Enter PIN"
+                id="userPinInput"
+                className="user-input"
+                onChange={this.onChangeUserPin}
+              />
+            </div>
+            <button type="submit" className="btn-login">
+              Login
+            </button>
+            <p className="error-msg ">{errorMsg}</p>
+          </form>
+        </div>
+      </div>
     )
   }
 }
